@@ -2,6 +2,7 @@
   display: grid;
   gap: var(--space-2);
   flex: 1;
+  min-width: 0;
 }
 
 .stats__level {
@@ -17,16 +18,22 @@
   justify-content: center;
   gap: 0.25em;
   white-space: nowrap;
-  min-width: 3.25rem;
+  min-width: 3.5rem;
   height: 2rem;
-  padding-inline: var(--space-2);
+  padding-inline: var(--space-3);
   border-radius: var(--radius-full);
   background: var(--color-xp-soft);
   color: var(--color-xp);
+  font-family: var(--font-display);
   font-weight: var(--weight-bold);
-  font-size: var(--text-sm);
+  font-size: var(--text-md);
+  line-height: 1;
   font-variant-numeric: tabular-nums;
-  animation: level-in var(--duration-slow) var(--ease-out);
+}
+
+/* Level up: rare, so it gets a small celebratory pop. */
+.stats__level-badge--up {
+  animation: level-up var(--duration-slow) var(--ease-out);
 }
 
 .stats__xp {
@@ -35,6 +42,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  min-width: 0;
 }
 
 .stats__xp-bar {
@@ -65,12 +73,14 @@
 .stats__xp-pop {
   position: absolute;
   inset-inline-end: 0;
-  top: 100%;
+  bottom: 100%;
+  font-family: var(--font-display);
   font-size: var(--text-sm);
   font-weight: var(--weight-bold);
   color: var(--color-xp);
+  white-space: nowrap;
   pointer-events: none;
-  animation: xp-pop 900ms var(--ease-out) forwards;
+  animation: xp-pop var(--duration-celebrate) var(--ease-out) both;
 }
 
 .stats__row {
@@ -92,7 +102,7 @@
 
 .stats__streak--on {
   color: var(--color-text);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-semibold);
 }
 
 .stats__streak--on svg {
@@ -101,43 +111,73 @@
 
 .stats__badges-button {
   min-height: var(--touch-target);
-  padding-inline: var(--space-3);
+  padding-inline: var(--space-4);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-full);
   background: var(--color-surface);
   font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-semibold);
   font-variant-numeric: tabular-nums;
+  transition:
+    background-color var(--duration-fast) ease,
+    transform var(--duration-press) var(--ease-out);
 }
 
-.stats__badges-button:hover {
-  background: var(--color-surface-muted);
+.stats__badges-button:active {
+  transform: scale(var(--press-scale));
 }
 
-@keyframes level-in {
-  from {
-    transform: scale(0.6);
-    opacity: 0;
+@media (hover: hover) {
+  .stats__badges-button:hover {
+    background: var(--color-surface-muted);
+  }
+}
+
+@keyframes level-up {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.4;
+  }
+  60% {
+    transform: scale(1.12);
+    opacity: 1;
   }
 }
 
 @keyframes xp-pop {
   0% {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(8px);
   }
   20% {
     opacity: 1;
   }
   100% {
     opacity: 0;
-    transform: translateY(-12px);
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes xp-fade {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  20%,
+  60% {
+    opacity: 1;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stats__xp-pop {
+  .stats__xp-fill,
+  .stats__badges-button {
+    transition: none;
+  }
+  .stats__level-badge--up {
     animation: none;
-    opacity: 0;
+  }
+  .stats__xp-pop {
+    animation-name: xp-fade;
   }
 }

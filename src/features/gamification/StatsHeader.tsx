@@ -7,6 +7,8 @@ interface Props {
   view: GamificationView;
   /** Latest XP gain, shown as a short float; key changes per gain. */
   xpPop: { amount: number; key: number } | null;
+  /** Increments on each level up; 0 means no level up this session. */
+  levelUpKey: number;
 }
 
 function streakLabel(view: GamificationView): string {
@@ -15,14 +17,17 @@ function streakLabel(view: GamificationView): string {
   return view.streakNeedsToday ? `${days}, keep it going today` : days;
 }
 
-export function StatsHeader({ view, xpPop }: Props) {
+export function StatsHeader({ view, xpPop, levelUpKey }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const nextLevel = view.level + 1;
 
   return (
     <div className="stats">
       <div className="stats__level">
-        <span key={view.level} className="stats__level-badge">
+        <span
+          key={levelUpKey}
+          className={`stats__level-badge ${levelUpKey > 0 ? 'stats__level-badge--up' : ''}`}
+        >
           <span className="visually-hidden">Level </span>
           <span aria-hidden="true">Lv</span>
           {view.level}

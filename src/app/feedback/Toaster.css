@@ -1,49 +1,59 @@
 .toaster {
   position: fixed;
   inset-inline: 0;
-  bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
+  bottom: 0;
   z-index: 20;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--space-2);
-  padding-inline: var(--space-4);
+  padding: 0 var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom));
   pointer-events: none;
 }
 
+/* Transition from @starting-style, not keyframes: toasts can fire in quick succession. */
 .toast {
   pointer-events: auto;
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
   width: min(100%, 26rem);
   min-height: var(--touch-target);
-  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4);
+  border: 1px solid transparent;
   border-radius: var(--radius-md);
   background: var(--color-text);
-  color: var(--color-surface);
+  color: var(--color-on-inverse);
   box-shadow: var(--shadow-raised);
-  animation: toast-in var(--duration-normal) var(--ease-out);
+  transition:
+    opacity var(--duration-normal) var(--ease-out),
+    transform var(--duration-normal) var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+    transform: translateY(12px);
+  }
 }
 
 .toast--celebrate {
-  background: var(--color-surface);
+  background: var(--color-accent-soft);
   color: var(--color-text);
-  border: 1px solid var(--color-border);
+  border-color: var(--color-accent);
 }
 
 .toast__message {
   flex: 1;
+  white-space: pre-line;
   margin: 0;
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
   padding-block: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
 }
 
 .toast__action {
   min-height: var(--touch-target);
   min-width: var(--touch-target);
-  padding-inline: var(--space-4);
+  padding-inline: var(--space-3);
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -51,6 +61,7 @@
   font-weight: var(--weight-bold);
   text-decoration: underline;
   text-underline-offset: 3px;
+  text-decoration-thickness: from-font;
 }
 
 .toast__dismiss {
@@ -64,19 +75,37 @@
   color: inherit;
 }
 
-.toast__action:hover,
-.toast__dismiss:hover {
-  background: rgb(255 255 255 / 0.12);
+.toast__action,
+.toast__dismiss {
+  transition: transform var(--duration-press) var(--ease-out);
+}
+
+.toast__action:active,
+.toast__dismiss:active {
+  transform: scale(var(--press-scale));
+}
+
+@media (hover: hover) {
+  .toast__action:hover,
+  .toast__dismiss:hover {
+    background: var(--color-inverse-hover);
+  }
 }
 
 .toast__action:focus-visible,
 .toast__dismiss:focus-visible {
-  outline-color: var(--color-surface);
+  outline-color: var(--color-on-inverse);
+  outline-offset: -3px;
 }
 
-@keyframes toast-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    @starting-style {
+      transform: none;
+    }
+  }
+  .toast__action:active,
+  .toast__dismiss:active {
+    transform: none;
   }
 }

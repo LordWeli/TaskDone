@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import type { DailyProgress } from './progress';
 import './ProgressRing.css';
 
@@ -13,11 +14,19 @@ function caption({ done, total }: DailyProgress): string {
   return left === 1 ? '1 task to go' : `${left} tasks to go`;
 }
 
-export function ProgressRing({ progress }: { progress: DailyProgress }) {
+const BURST_DOTS = 12;
+
+interface Props {
+  progress: DailyProgress;
+  /** Increments on each perfect day; 0 means none this session. */
+  celebrateKey: number;
+}
+
+export function ProgressRing({ progress, celebrateKey }: Props) {
   const { done, total, fraction } = progress;
   const valueText = `${done} of ${total} tasks done`;
   return (
-    <div className="progress">
+    <div className={`progress ${celebrateKey > 0 ? 'progress--celebrate' : ''}`}>
       <div
         className="progress__ring"
         role="progressbar"
@@ -27,7 +36,13 @@ export function ProgressRing({ progress }: { progress: DailyProgress }) {
         aria-valuenow={Math.round(fraction * 100)}
         aria-valuetext={valueText}
       >
-        <svg viewBox={`0 0 ${SIZE} ${SIZE}`} width={SIZE} height={SIZE} aria-hidden="true">
+        <svg
+          key={`ring-${celebrateKey}`}
+          viewBox={`0 0 ${SIZE} ${SIZE}`}
+          width={SIZE}
+          height={SIZE}
+          aria-hidden="true"
+        >
           <circle
             className="progress__track"
             cx={SIZE / 2}
@@ -46,6 +61,16 @@ export function ProgressRing({ progress }: { progress: DailyProgress }) {
             transform={`rotate(-90 ${SIZE / 2} ${SIZE / 2})`}
           />
         </svg>
+        {celebrateKey > 0 && (
+          <span key={`burst-${celebrateKey}`} className="progress__burst" aria-hidden="true">
+            {Array.from({ length: BURST_DOTS }, (_, i) => (
+              <span
+                key={i}
+                style={{ '--angle': `${(360 / BURST_DOTS) * i}deg` } as CSSProperties}
+              />
+            ))}
+          </span>
+        )}
         <span className="progress__fraction" aria-hidden="true">
           {done}/{total}
         </span>

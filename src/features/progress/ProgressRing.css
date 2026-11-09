@@ -3,6 +3,7 @@
   align-items: center;
   gap: var(--space-4);
   padding: var(--space-4);
+  border: 1px solid transparent;
   border-radius: var(--radius-lg);
   background: var(--color-surface);
   box-shadow: var(--shadow-card);
@@ -28,18 +29,79 @@
 
 .progress__fraction {
   position: absolute;
+  font-family: var(--font-display);
   font-weight: var(--weight-bold);
   font-variant-numeric: tabular-nums;
-  font-size: var(--text-sm);
+  font-size: var(--text-md);
 }
 
 .progress__title {
   margin: 0;
-  font-weight: var(--weight-semibold);
-  font-size: var(--text-lg);
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-xl);
+  line-height: var(--leading-tight);
 }
 
 .progress__caption {
   margin: 0;
   color: var(--color-text-muted);
+}
+
+/* Perfect day: the ring pops and a burst of dots flies out. Once a day at most. */
+.progress--celebrate .progress__ring svg {
+  animation: ring-pop var(--duration-slow) var(--ease-out);
+}
+
+.progress__burst {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.progress__burst span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  margin: -4px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  opacity: 0;
+  animation: burst var(--duration-celebrate) var(--ease-out) both;
+}
+
+.progress__burst span:nth-child(3n + 2) {
+  background: var(--color-success);
+}
+
+.progress__burst span:nth-child(3n) {
+  background: var(--color-xp);
+}
+
+@keyframes ring-pop {
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+@keyframes burst {
+  0% {
+    opacity: 1;
+    transform: rotate(var(--angle)) translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--angle)) translateY(-56px) scale(0.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress--celebrate .progress__ring svg {
+    animation: none;
+  }
+  .progress__burst {
+    display: none;
+  }
 }

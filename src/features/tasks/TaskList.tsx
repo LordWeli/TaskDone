@@ -1,4 +1,5 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
+import { TASK_EXIT_MS, prefersReducedMotion } from '../../lib/motion';
 import { taskCheckboxId } from './ids';
 import type { Task } from './model';
 import './TaskList.css';
@@ -14,6 +15,8 @@ interface Props {
 
 export function TaskList({ open, done, onToggle, onDelete, onEmptyFocus }: Props) {
   const listRef = useRef<HTMLDivElement>(null);
+  // Only tasks that appear after the list mounted animate in; the first paint stays still.
+  const [mountedAt] = useState(() => Date.now());
   const nothing = open.length === 0 && done.length === 0;
 
   // Keep keyboard focus in the list after a delete removes the focused row.
@@ -51,7 +54,13 @@ export function TaskList({ open, done, onToggle, onDelete, onEmptyFocus }: Props
         ) : (
           <ul className="task-list">
             {open.map((task) => (
-              <TaskItem key={task.id} task={task} onToggle={onToggle} onDelete={deleteAndRefocus} />
+              <TaskItem
+                key={task.id}
+                task={task}
+                mountedAt={mountedAt}
+                onToggle={onToggle}
+                onDelete={deleteAndRefocus}
+              />
             ))}
           </ul>
         )}
@@ -63,7 +72,13 @@ export function TaskList({ open, done, onToggle, onDelete, onEmptyFocus }: Props
           </h2>
           <ul className="task-list">
             {done.map((task) => (
-              <TaskItem key={task.id} task={task} onToggle={onToggle} onDelete={deleteAndRefocus} />
+              <TaskItem
+                key={task.id}
+                task={task}
+                mountedAt={mountedAt}
+                onToggle={onToggle}
+                onDelete={deleteAndRefocus}
+              />
             ))}
           </ul>
         </section>
@@ -74,15 +89,37 @@ export function TaskList({ open, done, onToggle, onDelete, onEmptyFocus }: Props
 
 interface ItemProps {
   task: Task;
+  mountedAt: number;
   onToggle: (taskId: string) => void;
   onDelete: (taskId: string) => void;
 }
 
-function TaskItem({ task, onToggle, onDelete }: ItemProps) {
+function enterClass(task: Task, mountedAt: number): string {
+  if (task.completedAt !== null) return task.completedAt >= mountedAt ? 'task--enter-move' : '';
+  return task.createdAt >= mountedAt ? 'task--enter-add' : '';
+}
+
+function TaskItem({ task, mountedAt, onToggle, onDelete }: ItemProps) {
+  const [leaving, setLeaving] = useState(false);
   const isDone = task.completedAt !== null;
   const id = taskCheckboxId(task.id);
+
+  const remove = () => {
+    if (prefersReducedMotion()) return onDelete(task.id);
+    setLeaving(true);
+    setTimeout(() => onDelete(task.id), TASK_EXIT_MS);
+  };
+
+  const className = [
+    'task',
+    isDone && 'task--done',
+    leaving ? 'task--leaving' : enterClass(task, mountedAt),
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <li className={`task ${isDone ? 'task--done' : ''}`}>
+    <li className={className}>
       <input
         id={id}
         type="checkbox"
@@ -97,7 +134,7 @@ function TaskItem({ task, onToggle, onDelete }: ItemProps) {
         type="button"
         className="task__delete"
         aria-label={`Delete ${task.title}`}
-        onClick={() => onDelete(task.id)}
+        onClick={remove}
       >
         <svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none">
           <path

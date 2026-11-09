@@ -119,7 +119,7 @@ describe('gamification feedback', () => {
       '10 of 50 XP to level 2',
     );
     expect(screen.getByText('1-day streak')).toBeInTheDocument();
-    expect(screen.getByText('Badge unlocked: First Task')).toBeInTheDocument();
+    expect(screen.getByText('Badge unlocked: First Task.')).toBeInTheDocument();
   });
 
   it('celebrates a perfect day and a level up', async () => {
@@ -130,7 +130,7 @@ describe('gamification feedback', () => {
     }
     expect(screen.getByText(/Perfect day/)).toBeInTheDocument();
     // 3 × 10 + 25 bonus = 55 XP → level 2
-    expect(screen.getByText('Level 2 reached')).toBeInTheDocument();
+    expect(screen.getByText(/Level 2 reached/)).toBeInTheDocument();
   });
 
   it('un-ticking takes the XP back', async () => {

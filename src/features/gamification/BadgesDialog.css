@@ -1,4 +1,5 @@
 .badges {
+  overscroll-behavior: contain;
   width: min(100% - 2rem, 28rem);
   max-height: min(100dvh - 2rem, 40rem);
   padding: 0;
@@ -9,8 +10,28 @@
   box-shadow: var(--shadow-raised);
 }
 
+/* Modal: centered, so it scales from its own center. Exit is instant. */
+.badges[open] {
+  transition:
+    opacity var(--duration-normal) var(--ease-out),
+    transform var(--duration-normal) var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
 .badges::backdrop {
-  background: rgb(0 0 0 / 0.35);
+  background: var(--color-scrim);
+}
+
+.badges[open]::backdrop {
+  transition: opacity var(--duration-normal) var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+  }
 }
 
 .badges__inner {
@@ -25,7 +46,9 @@
 
 .badges__title {
   margin: 0;
-  font-size: var(--text-xl);
+  font-size: var(--text-2xl);
+  line-height: var(--leading-tight);
+  letter-spacing: -0.01em;
 }
 
 .badges__close {
@@ -38,8 +61,10 @@
   background: transparent;
 }
 
-.badges__close:hover {
-  background: var(--color-surface-muted);
+@media (hover: hover) {
+  .badges__close:hover {
+    background: var(--color-surface-muted);
+  }
 }
 
 .badges__summary {
@@ -85,6 +110,7 @@
 
 .badge__name {
   margin: 0;
+  font-family: var(--font-display);
   font-weight: var(--weight-semibold);
 }
 
@@ -98,4 +124,12 @@
 .badge--unlocked .badge__state {
   color: var(--color-text);
   font-weight: var(--weight-medium);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .badges[open] {
+    @starting-style {
+      transform: none;
+    }
+  }
 }

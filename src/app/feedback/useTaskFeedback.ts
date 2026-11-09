@@ -9,31 +9,26 @@ import { useToast } from './Toaster';
 const badgeName = (id: string) => BADGES.find((b) => b.id === id)?.name ?? id;
 
 interface Options {
-  /** Called with the net XP change of a completion, for the floating "+XP". */
-  onXpGain?: (amount: number) => void;
+  /** Visual celebrations for a completion (floating XP, level pop, perfect-day burst). */
+  onCelebrate?: (events: GamificationEvents) => void;
 }
 
 /** Screen-reader announcements, snackbars and celebrations for task actions. */
-export function useTaskFeedback({ onXpGain }: Options = {}): TaskCallbacks {
+export function useTaskFeedback({ onCelebrate }: Options = {}): TaskCallbacks {
   const announce = useAnnounce();
   const { show, clearActions } = useToast();
 
   return useMemo<TaskCallbacks>(() => {
+    // One toast per completion, however many things it unlocked.
     const celebrate = (events: GamificationEvents) => {
-      if (events.perfectDay) {
-        const text = `Perfect day. Every task done, +${PERFECT_DAY_BONUS_XP} bonus XP.`;
-        show({ message: text, tone: 'celebrate' });
-        announce(text);
-      }
-      if (events.levelAfter > events.levelBefore) {
-        show({ message: `Level ${events.levelAfter} reached`, tone: 'celebrate' });
-        announce(`Level up. You reached level ${events.levelAfter}.`);
-      }
-      for (const id of events.badgesUnlocked) {
-        const text = `Badge unlocked: ${badgeName(id)}`;
-        show({ message: text, tone: 'celebrate' });
-        announce(`${text}.`);
-      }
+      const lines: string[] = [];
+      if (events.perfectDay)
+        lines.push(`Perfect day. Every task done, +${PERFECT_DAY_BONUS_XP} bonus XP.`);
+      if (events.levelAfter > events.levelBefore) lines.push(`Level ${events.levelAfter} reached.`);
+      for (const id of events.badgesUnlocked) lines.push(`Badge unlocked: ${badgeName(id)}.`);
+      if (lines.length === 0) return;
+      show({ message: lines.join('\n'), tone: 'celebrate' });
+      announce(lines.join(' '));
     };
 
     return {
@@ -45,7 +40,7 @@ export function useTaskFeedback({ onXpGain }: Options = {}): TaskCallbacks {
         clearActions();
         if (task.completedAt !== null) {
           announce(`Completed ${task.title}. Plus ${events.xpDelta} XP.`);
-          onXpGain?.(events.xpDelta);
+          onCelebrate?.(events);
           celebrate(events);
         } else {
           const lost = Math.abs(events.xpDelta);
@@ -66,5 +61,5 @@ export function useTaskFeedback({ onXpGain }: Options = {}): TaskCallbacks {
         requestAnimationFrame(() => document.getElementById(taskCheckboxId(task.id))?.focus());
       },
     };
-  }, [announce, show, clearActions, onXpGain]);
+  }, [announce, show, clearActions, onCelebrate]);
 }
