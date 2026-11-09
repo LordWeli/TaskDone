@@ -1,10 +1,14 @@
 # TaskDone
 
-Personal daily-task PWA: add tasks, tick them off, watch the day fill up. Light gamification (XP, levels, streak, badges). Product decisions live in [`SPEC.md`](SPEC.md); engineering rules in [`CLAUDE.md`](CLAUDE.md).
+Personal daily-task PWA: add tasks, tick them off, watch the day fill up. Light gamification (XP, levels, streak, badges). Product decisions live in [`SPEC.md`](SPEC.md); engineering rules in [`CLAUDE.md`](CLAUDE.md); out-of-scope ideas in [`IDEAS.md`](IDEAS.md).
+
+Live: <https://taskdone-wsn.web.app> (installable: Safari **Share → Add to Home Screen** on iPhone,
+or the install prompt in Chrome/Android).
 
 ## Requirements
 
-- Node.js 20+ and npm
+- Node.js 20+ and npm. The toolchain is pinned to Vite 6, Vitest 3, jsdom 26 and ESLint 9 so it
+  runs on Node 22.3; newer majors need Node 22.12+.
 
 ## Getting started
 
@@ -23,20 +27,25 @@ npm run dev       # http://localhost:5173
 | `npm run lint`      | ESLint                                     |
 | `npm run typecheck` | TypeScript, strict mode                    |
 | `npm test`          | Unit and component tests (Vitest + RTL)    |
+| `npm run test:e2e`  | Playwright smoke test, online and offline  |
 | `npm run format`    | Prettier write                             |
-| `npm run check`     | lint + typecheck + test (CI entry point)   |
+| `npm run check`     | lint + typecheck + test                    |
+| `npm run icons`     | Regenerate PNG icons in `public/icons/`    |
+| `npm run deploy`    | Build, deploy hosting and Firestore rules  |
 
 ## Project layout
 
 ```
 src/
-  app/            app shell, providers
+  app/            App (local vs Firebase), FirebaseApp (auth gate, lazy chunk),
+                  SyncedShell (Firestore, lazy chunk), Shell, Dashboard, feedback/
   features/
     tasks/        task model, repository, hooks, list UI
     progress/     daily progress ring and calculations
     gamification/ XP, levels, streak, badges (pure logic + UI)
     auth/         email + password sign-in
   lib/date.ts     local-day helpers (the single place for "what day is it")
+  lib/firebase*.ts, firestore.ts  Firebase config, app/auth, Firestore with persistent cache
   config/gamification.ts  every rule value (XP, level formula, badges)
   styles/         design tokens (CSS variables) and global styles
 ```
@@ -58,6 +67,17 @@ Known limit: stats are computed on the device. If two devices complete tasks whi
 offline, the last stats write wins when they sync (tasks themselves are never lost). Fine for one
 person; a server-side recount would be the fix if it ever matters.
 
+## Testing
+
+- **Unit and component** (`npm test`): gamification rules (XP, levels, streak, midnight and DST
+  edges, undo, perfect day), task actions, stores, Firestore mapping, login and the dashboard
+  flows. Tests run in the `America/New_York` zone so DST edges are deterministic.
+- **End to end** (`npm run test:e2e`): add, complete and delete with undo, plus reload, against a
+  production build served by the service worker, online and offline. It runs in local-storage
+  mode, so it needs no Firebase account.
+- **CI**: `.github/workflows/ci.yml` runs lint, typecheck, unit and e2e tests on every push and
+  pull request. It does not deploy.
+
 ## Firebase setup
 
 1. Create a project at <https://console.firebase.google.com> (Google Analytics not needed).
@@ -67,7 +87,7 @@ person; a server-side recount would be the fix if it ever matters.
    the paid plan and are not required.
 4. **Build → Authentication → Sign-in method → Email/Password**: enable it. The email link option
    is not used (on iPhone a Home Screen app cannot receive links). Optional, once your account
-   exists: **Authentication → Settings → User actions**, turn off *Enable create (sign-up)* so no
+   exists: **Authentication → Settings → User actions**, turn off _Enable create (sign-up)_ so no
    one else can create accounts.
 5. **Authentication → Settings → Authorized domains**: `localhost` and
    `<project-id>.web.app` / `.firebaseapp.com` are there by default; add any custom domain.
