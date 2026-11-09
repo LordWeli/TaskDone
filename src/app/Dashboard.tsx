@@ -10,7 +10,12 @@ import { useTasks } from '../features/tasks/useTasks';
 import { useTaskFeedback } from './feedback/useTaskFeedback';
 import './Dashboard.css';
 
-export function Dashboard() {
+export interface Account {
+  email: string;
+  onSignOut: () => void;
+}
+
+export function Dashboard({ account }: { account?: Account }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [celebration, setCelebration] = useState({
     xpPop: null as { amount: number; key: number } | null,
@@ -25,7 +30,7 @@ export function Dashboard() {
     }));
   }, []);
   const feedback = useTaskFeedback({ onCelebrate });
-  const { open, done, add, toggle, remove } = useTasks(feedback);
+  const { open, done, loaded, add, toggle, remove } = useTasks(feedback);
   const progress = useDailyProgress();
   const gamification = useGamification();
 
@@ -44,14 +49,30 @@ export function Dashboard() {
           <AddTaskForm onAdd={add} inputRef={inputRef} />
         </div>
         <ProgressRing progress={progress} celebrateKey={celebration.perfectDayKey} />
-        <TaskList
-          open={open}
-          done={done}
-          onToggle={toggle}
-          onDelete={remove}
-          onEmptyFocus={() => inputRef.current?.focus()}
-        />
+        {loaded ? (
+          <TaskList
+            open={open}
+            done={done}
+            onToggle={toggle}
+            onDelete={remove}
+            onEmptyFocus={() => inputRef.current?.focus()}
+          />
+        ) : (
+          <p className="dashboard__loading" role="status">
+            Loading your tasks…
+          </p>
+        )}
       </main>
+      {account && (
+        <footer className="dashboard__footer">
+          <p className="dashboard__account">
+            Signed in as <bdi>{account.email}</bdi>
+          </p>
+          <button type="button" className="dashboard__signout" onClick={account.onSignOut}>
+            Sign out
+          </button>
+        </footer>
+      )}
     </div>
   );
 }

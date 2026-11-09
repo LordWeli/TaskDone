@@ -43,6 +43,7 @@
   --color-xp: var(--blue-600);
   --color-xp-soft: var(--blue-50);
   --color-streak: var(--red-600);
+  --color-danger: var(--red-600); /* errors; 5.4:1 on bg */
   --color-focus: var(--ink-900);
   --color-scrim: rgb(42 36 20 / 0.4);
   --color-on-inverse: var(--white);

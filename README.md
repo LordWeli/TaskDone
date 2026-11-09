@@ -41,16 +41,44 @@ src/
   styles/         design tokens (CSS variables) and global styles
 ```
 
-### Storage
+### Storage and sync
 
-Tasks and stats sit behind a `TaskStore` interface (`src/features/tasks/store.ts`). Until Firebase is wired in (milestone 5), the app uses a `localStorage` implementation, so it already works offline on a single device.
+Tasks and stats sit behind a `TaskStore` interface (`src/features/tasks/store.ts`):
 
-## Firebase setup (milestone 5)
+- **Firestore** (`firestoreStore.ts`) when `.env.local` has the Firebase config. Data lives in
+  `users/{uid}/tasks/{taskId}` and `users/{uid}/stats/summary`. Firestore's persistent IndexedDB
+  cache serves reads offline and queues writes until the connection returns. Each action (a task
+  change plus its stats) is one batched write, so XP never drifts.
+- **localStorage** (`localStore.ts`) when no Firebase config is present: handy for local work and
+  used by the tests.
 
-1. Create a project at <https://console.firebase.google.com>.
-2. Add a **Web app** and copy its config values.
-3. **Firestore Database** → Create database (production mode).
-4. **Authentication** → Sign-in method → enable **Email/Password** and its **Email link (passwordless sign-in)** option.
-5. **Authentication** → Settings → **Authorized domains**: add the domains you serve from (`localhost` is there by default; add your hosting domain).
-6. Copy `.env.example` to `.env.local` and fill in the values. Never commit `.env*` files (except `.env.example`).
-7. Deploy the security rules: `npx firebase-tools deploy --only firestore:rules`.
+Times are stored as milliseconds since epoch because day boundaries use the device's local clock.
+
+Known limit: stats are computed on the device. If two devices complete tasks while both are
+offline, the last stats write wins when they sync (tasks themselves are never lost). Fine for one
+person; a server-side recount would be the fix if it ever matters.
+
+## Firebase setup
+
+1. Create a project at <https://console.firebase.google.com> (Google Analytics not needed).
+2. **Project settings → Your apps → Web (`</>`)**: register the app and copy its config.
+3. **Build → Firestore Database → Create database**: pick the region closest to you
+   (`southamerica-east1` for Brazil; it cannot be changed later), production mode. Backups need
+   the paid plan and are not required.
+4. **Build → Authentication → Sign-in method → Email/Password**: enable it **and** its
+   **Email link (passwordless sign-in)** option.
+5. **Authentication → Settings → Authorized domains**: `localhost` and
+   `<project-id>.web.app` / `.firebaseapp.com` are there by default; add any custom domain.
+6. Copy `.env.example` to `.env.local` and fill in the values. Never commit `.env*` files
+   (except `.env.example`). The web config is not secret; the security rules protect the data.
+7. Log in once: `npx firebase-tools@15 login`. The project id is set in `.firebaserc`.
+
+## Deploy (Firebase Hosting)
+
+```bash
+npm run deploy        # build + deploy hosting and Firestore rules
+npm run deploy:rules  # only firestore.rules
+```
+
+The app is served at `https://<project-id>.web.app`. `firebase.json` rewrites every path to
+`index.html` and serves the service worker with `no-cache` so updates reach installed apps.

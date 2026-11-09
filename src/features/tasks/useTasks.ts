@@ -38,7 +38,10 @@ export function useTasks(callbacks: TaskCallbacks = {}) {
 
   const toggle = useCallback(
     (taskId: string) => {
-      const result = buildToggle(store.getSnapshot(), taskId, Date.now());
+      const current = store.getSnapshot();
+      // Stats must be loaded before any write that recomputes them.
+      if (!current.loaded) return;
+      const result = buildToggle(current, taskId, Date.now());
       if (!result) return;
       void store.commit(result.mutation);
       onToggled?.(result.task, result.events);
@@ -64,5 +67,5 @@ export function useTasks(callbacks: TaskCallbacks = {}) {
     [store, onDeleted, restore],
   );
 
-  return { day, open, done, add, toggle, remove };
+  return { day, open, done, loaded: snapshot.loaded, add, toggle, remove };
 }

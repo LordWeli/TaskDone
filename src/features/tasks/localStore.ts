@@ -5,7 +5,7 @@ import { applyMutation, type Mutation, type StoreSnapshot, type TaskStore } from
 const STORAGE_KEY = 'taskdone:v1';
 
 function emptySnapshot(): StoreSnapshot {
-  return { tasks: [], stats: initialStats() };
+  return { tasks: [], stats: initialStats(), loaded: true };
 }
 
 function isTask(value: unknown): value is Task {
@@ -25,7 +25,7 @@ function parse(raw: string | null): StoreSnapshot {
   try {
     const data = JSON.parse(raw) as { tasks?: unknown; stats?: Partial<Stats> };
     const tasks = Array.isArray(data.tasks) ? data.tasks.filter(isTask) : [];
-    return { tasks, stats: { ...initialStats(), ...data.stats } };
+    return { tasks, stats: { ...initialStats(), ...data.stats }, loaded: true };
   } catch {
     return emptySnapshot();
   }

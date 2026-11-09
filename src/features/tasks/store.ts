@@ -4,6 +4,8 @@ import type { Task } from './model';
 export interface StoreSnapshot {
   tasks: readonly Task[];
   stats: Stats;
+  /** False until tasks and stats have been read once (from cache or server). */
+  loaded: boolean;
 }
 
 /** One atomic change: task upserts, task deletions and (optionally) new stats. */
@@ -27,5 +29,5 @@ export function applyMutation(snapshot: StoreSnapshot, mutation: Mutation): Stor
   const removed = new Set(mutation.remove ?? []);
   const byId = new Map(snapshot.tasks.filter((t) => !removed.has(t.id)).map((t) => [t.id, t]));
   for (const task of mutation.put ?? []) byId.set(task.id, task);
-  return { tasks: [...byId.values()], stats: mutation.stats ?? snapshot.stats };
+  return { ...snapshot, tasks: [...byId.values()], stats: mutation.stats ?? snapshot.stats };
 }
