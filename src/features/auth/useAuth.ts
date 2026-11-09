@@ -1,6 +1,6 @@
 import { onAuthStateChanged, signOut, type Auth, type User } from 'firebase/auth';
 import { useCallback, useEffect, useState } from 'react';
-import { completeLink, isLinkInUrl, savedEmail, sendLink } from './emailLink';
+import { completeLink, isLinkInUrl, isSignInLink, savedEmail, sendLink } from './emailLink';
 
 export type AuthState =
   | { status: 'loading' }
@@ -38,6 +38,13 @@ export function useAuth(auth: Auth) {
   const requestLink = useCallback((email: string) => sendLink(auth, email), [auth]);
   const confirmEmail = useCallback((email: string) => completeLink(auth, email), [auth]);
   const logOut = useCallback(() => signOut(auth), [auth]);
+  const pasteLink = useCallback(
+    async (email: string, link: string) => {
+      if (!isSignInLink(auth, link)) throw { code: 'taskdone/not-a-link' };
+      await completeLink(auth, email, link);
+    },
+    [auth],
+  );
 
-  return { state, requestLink, confirmEmail, logOut };
+  return { state, requestLink, confirmEmail, pasteLink, savedEmail, logOut };
 }

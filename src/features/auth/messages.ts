@@ -7,6 +7,8 @@ export function signInErrorMessage(error: unknown): string {
       return 'Enter an email like name@example.com.';
     case 'auth/network-request-failed':
       return 'Unable to reach the server. Check your connection and try again.';
+    case 'taskdone/not-a-link':
+      return 'That is not a sign-in link. Copy the whole link from the email and try again.';
     case 'auth/invalid-action-code':
     case 'auth/expired-action-code':
       return 'This sign-in link has expired or was already used. Request a new one.';

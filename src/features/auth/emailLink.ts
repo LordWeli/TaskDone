@@ -38,12 +38,26 @@ export function isLinkInUrl(auth: Auth): boolean {
   return isSignInWithEmailLink(auth, window.location.href);
 }
 
+/** True when `link` (for example pasted from the email) is a sign-in link. */
+export function isSignInLink(auth: Auth, link: string): boolean {
+  return isSignInWithEmailLink(auth, link.trim());
+}
+
 /** The email saved when the link was sent from this device, if any. */
 export const savedEmail = readEmail;
 
-/** Completes sign-in from the link in the URL, then strips the link from the address bar. */
-export async function completeLink(auth: Auth, email: string): Promise<void> {
-  await signInWithEmailLink(auth, email, window.location.href);
+/**
+ * Completes sign-in from a link: the current URL by default, or a link pasted
+ * into the app (an iPhone Home Screen app cannot receive links; iOS opens them
+ * in Safari, which keeps separate storage).
+ */
+export async function completeLink(
+  auth: Auth,
+  email: string,
+  link: string = window.location.href,
+): Promise<void> {
+  const fromUrl = link === window.location.href;
+  await signInWithEmailLink(auth, email, link.trim());
   writeEmail(null);
-  window.history.replaceState(null, '', '/');
+  if (fromUrl) window.history.replaceState(null, '', '/');
 }

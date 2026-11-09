@@ -35,7 +35,7 @@ function SyncedDashboard({ uid, account }: { uid: string; account: Account }) {
 
 function FirebaseApp() {
   const { auth } = getFirebase();
-  const { state, requestLink, confirmEmail, logOut } = useAuth(auth);
+  const { state, requestLink, confirmEmail, pasteLink, savedEmail, logOut } = useAuth(auth);
 
   switch (state.status) {
     case 'loading':
@@ -51,6 +51,8 @@ function FirebaseApp() {
           mode={state.status === 'needsEmail' ? 'confirm' : 'request'}
           onRequest={requestLink}
           onConfirm={confirmEmail}
+          onPasteLink={pasteLink}
+          rememberedEmail={savedEmail()}
         />
       );
     case 'signedIn':
