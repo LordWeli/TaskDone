@@ -1,6 +1,8 @@
 .add-task {
-  display: grid;
-  grid-template-columns: 1fr auto;
+  /* The button drops below the field when the field would get narrower than ~8 characters
+     (narrow screens with large text), so typing room never collapses. */
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--space-2);
   padding: var(--space-2);
   border-radius: var(--radius-lg);
@@ -16,6 +18,7 @@
 }
 
 .add-task__input {
+  flex: 1 1 8em;
   min-width: 0;
   min-height: 56px;
   padding-inline: var(--space-3);
@@ -32,8 +35,11 @@
 }
 
 .add-task__button {
+  flex: 1 0 auto;
+  max-width: 100%;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-1);
   min-height: 56px;
   min-width: 56px;
@@ -61,7 +67,7 @@
 }
 
 .add-task__hint {
-  grid-column: 1 / -1;
+  flex-basis: 100%;
   margin: 0;
   padding-inline: var(--space-3);
   font-size: var(--text-sm);

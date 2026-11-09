@@ -84,7 +84,7 @@ describe('acceptance flows', () => {
     const { user, input } = setup();
     await user.type(input, 'One{Enter}Two{Enter}');
     await user.click(screen.getByRole('button', { name: 'Delete One' }));
-    await user.click(screen.getByRole('button', { name: 'Dismiss' }));
+    await user.click(screen.getByRole('button', { name: 'Dismiss notification' }));
     expect(screen.queryByText('Task deleted')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Delete Two' }));

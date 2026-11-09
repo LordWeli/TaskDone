@@ -38,7 +38,7 @@ export function TaskList({ open, done, onToggle, onDelete, onEmptyFocus }: Props
     return (
       <div className="task-empty">
         <p className="task-empty__title">No tasks yet</p>
-        <p className="task-empty__body">Type one above and press Enter.</p>
+        <p className="task-empty__body">Type one in the field above to get started.</p>
       </div>
     );
   }

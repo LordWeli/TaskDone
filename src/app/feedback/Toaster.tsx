@@ -117,7 +117,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: number)
         <button
           type="button"
           className="toast__dismiss"
-          aria-label="Dismiss"
+          aria-label="Dismiss notification"
           onClick={() => onDismiss(toast.id)}
         >
           <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">
