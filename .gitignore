@@ -10,3 +10,6 @@ coverage
 test-results
 playwright-report
 .firebase
+dist-local
+# Lighthouse profile dirs created when run from WSL
+/C:*
