@@ -35,7 +35,7 @@ src/
     tasks/        task model, repository, hooks, list UI
     progress/     daily progress ring and calculations
     gamification/ XP, levels, streak, badges (pure logic + UI)
-    auth/         email-link sign-in (milestone 5)
+    auth/         email + password sign-in
   lib/date.ts     local-day helpers (the single place for "what day is it")
   config/gamification.ts  every rule value (XP, level formula, badges)
   styles/         design tokens (CSS variables) and global styles
@@ -65,8 +65,10 @@ person; a server-side recount would be the fix if it ever matters.
 3. **Build → Firestore Database → Create database**: pick the region closest to you
    (`southamerica-east1` for Brazil; it cannot be changed later), production mode. Backups need
    the paid plan and are not required.
-4. **Build → Authentication → Sign-in method → Email/Password**: enable it **and** its
-   **Email link (passwordless sign-in)** option.
+4. **Build → Authentication → Sign-in method → Email/Password**: enable it. The email link option
+   is not used (on iPhone a Home Screen app cannot receive links). Optional, once your account
+   exists: **Authentication → Settings → User actions**, turn off *Enable create (sign-up)* so no
+   one else can create accounts.
 5. **Authentication → Settings → Authorized domains**: `localhost` and
    `<project-id>.web.app` / `.firebaseapp.com` are there by default; add any custom domain.
 6. Copy `.env.example` to `.env.local` and fill in the values. Never commit `.env*` files

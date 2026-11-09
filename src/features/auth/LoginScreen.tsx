@@ -1,210 +1,103 @@
 import { useId, useState, type FormEvent } from 'react';
-import { EMAIL_PATTERN, signInErrorMessage } from './messages';
+import { EMAIL_PATTERN, PASSWORD_MIN, authErrorMessage, type AuthField } from './messages';
 import './LoginScreen.css';
 
 interface Props {
-  /** 'request' sends a link; 'confirm' finishes a link opened on another device. */
-  mode: 'request' | 'confirm';
-  onRequest: (email: string) => Promise<void>;
-  onConfirm: (email: string) => Promise<void>;
-  /** Finishes sign-in with a link pasted into the app. */
-  onPasteLink: (email: string, link: string) => Promise<void>;
-  /** Email remembered from an earlier request on this device. */
-  rememberedEmail?: string | null;
+  onSignIn: (email: string, password: string) => Promise<void>;
+  onSignUp: (email: string, password: string) => Promise<void>;
+  onResetPassword: (email: string) => Promise<void>;
 }
 
-type View = 'request' | 'sent' | 'paste';
+type View = 'signIn' | 'signUp' | 'reset' | 'resetSent';
 
-/** Installed to the Home Screen: links from the email open in the browser, not here. */
-function isStandalone(): boolean {
-  if (typeof window === 'undefined') return false;
-  const iosStandalone = (navigator as Navigator & { standalone?: boolean }).standalone === true;
-  return iosStandalone || window.matchMedia?.('(display-mode: standalone)').matches === true;
+interface FieldError {
+  field: AuthField;
+  text: string;
 }
 
-const INVALID_EMAIL = 'Enter an email like name@example.com.';
+const HEADINGS: Record<View, string> = {
+  signIn: 'Sign in',
+  signUp: 'Create your account',
+  reset: 'Reset your password',
+  resetSent: 'Check your email',
+};
 
-export function LoginScreen({
-  mode,
-  onRequest,
-  onConfirm,
-  onPasteLink,
-  rememberedEmail = null,
-}: Props) {
-  const [view, setView] = useState<View>('request');
-  const [email, setEmail] = useState(rememberedEmail ?? '');
-  const [sentTo, setSentTo] = useState<string | null>(null);
-  const [link, setLink] = useState('');
-  const [error, setError] = useState<string | null>(null);
+export function LoginScreen({ onSignIn, onSignUp, onResetPassword }: Props) {
+  const [view, setView] = useState<View>('signIn');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<FieldError | null>(null);
   const [busy, setBusy] = useState(false);
-  const [standalone] = useState(isStandalone);
   const emailId = useId();
-  const linkId = useId();
+  const passwordId = useId();
+  const hintId = useId();
   const errorId = useId();
 
-  const run = async (action: () => Promise<void>) => {
+  const go = (next: View) => {
+    setError(null);
+    setPassword('');
+    setView(next);
+  };
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    const address = email.trim();
+    if (!EMAIL_PATTERN.test(address)) {
+      return setError({ field: 'email', text: 'Enter an email like name@example.com.' });
+    }
+    if (view !== 'reset' && password === '') {
+      return setError({ field: 'password', text: 'Enter your password.' });
+    }
+    if (view === 'signUp' && password.length < PASSWORD_MIN) {
+      return setError({ field: 'password', text: `Use at least ${PASSWORD_MIN} characters.` });
+    }
     if (!navigator.onLine) {
-      setError('You are offline. Connect to the internet to sign in.');
-      return;
+      return setError({
+        field: 'form',
+        text: 'You are offline. Connect to the internet to sign in.',
+      });
     }
     setBusy(true);
     setError(null);
     try {
-      await action();
+      if (view === 'signIn') await onSignIn(address, password);
+      else if (view === 'signUp') await onSignUp(address, password);
+      else {
+        await onResetPassword(address);
+        setView('resetSent');
+      }
     } catch (e) {
-      setError(signInErrorMessage(e));
+      setError(authErrorMessage(e));
     } finally {
       setBusy(false);
     }
   };
 
-  const submitEmail = (event: FormEvent) => {
-    event.preventDefault();
-    const value = email.trim();
-    if (!EMAIL_PATTERN.test(value)) return setError(INVALID_EMAIL);
-    void run(async () => {
-      if (mode === 'confirm') return onConfirm(value);
-      await onRequest(value);
-      setSentTo(value);
-      setView('sent');
-    });
+  /** aria wiring for a field: its own error and, for the new password, the length hint. */
+  const describe = (field: AuthField, extra?: string) => {
+    const own = error?.field === field;
+    const ids = [extra, own ? errorId : undefined].filter(Boolean).join(' ');
+    return {
+      ...(own ? { 'aria-invalid': true as const } : {}),
+      ...(ids ? { 'aria-describedby': ids } : {}),
+    };
   };
 
-  const submitLink = (event: FormEvent) => {
-    event.preventDefault();
-    const address = (sentTo ?? email).trim();
-    if (!EMAIL_PATTERN.test(address)) return setError(INVALID_EMAIL);
-    if (link.trim() === '') return setError('Paste the sign-in link from the email.');
-    void run(() => onPasteLink(address, link));
-  };
+  const errorFor = (field: AuthField) =>
+    error?.field === field ? (
+      <p id={errorId} className="login__error" role={field === 'form' ? 'alert' : undefined}>
+        {error.text}
+      </p>
+    ) : null;
 
-  const go = (next: View) => {
-    setError(null);
-    setView(next);
-  };
-
-  const errorProps = (field: 'email' | 'link') => {
-    const fieldHasError =
-      error !== null && (field === 'email' ? error === INVALID_EMAIL : error !== INVALID_EMAIL);
-    return fieldHasError ? { 'aria-invalid': true, 'aria-describedby': errorId } : {};
-  };
-
-  const errorText = error && (
-    <p id={errorId} className="login__error">
-      {error}
-    </p>
-  );
-
-  const emailField = (autoFocus: boolean) => (
-    <>
-      <label htmlFor={emailId} className="login__label">
-        Email
-      </label>
-      <input
-        id={emailId}
-        className="login__input"
-        type="email"
-        name="email"
-        autoComplete="email"
-        inputMode="email"
-        placeholder="name@example.com"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        autoFocus={autoFocus}
-        {...errorProps('email')}
-      />
-    </>
-  );
-
-  const linkField = (autoFocus: boolean) => (
-    <>
-      <label htmlFor={linkId} className="login__label">
-        Sign-in link
-      </label>
-      <input
-        id={linkId}
-        className="login__input"
-        type="url"
-        name="link"
-        autoComplete="off"
-        inputMode="url"
-        placeholder="https://taskdone-wsn.firebaseapp.com/…"
-        value={link}
-        onChange={(e) => setLink(e.target.value)}
-        autoFocus={autoFocus}
-        {...errorProps('link')}
-      />
-    </>
-  );
-
-  const copyHint = standalone
-    ? 'Links from the email open in Safari, not in this app. In the email, touch and hold the link, tap Copy Link, then paste it here.'
-    : 'Open the link on this device, or copy it from the email and paste it here.';
-
-  let body;
-  if (mode === 'confirm') {
-    body = (
-      <form className="login__form" onSubmit={submitEmail} noValidate>
-        <h2 className="login__heading">Confirm your email</h2>
-        <p className="login__text">Enter the email you used to request this link.</p>
-        {emailField(true)}
-        {errorText}
-        <button type="submit" className="login__primary" aria-busy={busy || undefined}>
-          {busy ? 'Signing in…' : 'Sign in'}
-        </button>
-      </form>
-    );
-  } else if (view === 'sent') {
-    body = (
-      <form className="login__form" onSubmit={submitLink} noValidate>
-        <h2 className="login__heading">Check your email</h2>
-        <p className="login__text" role="status">
-          We sent a sign-in link to <strong>{sentTo}</strong>. If it is not in your inbox, look in
-          spam.
-        </p>
-        <p className="login__text">{copyHint}</p>
-        {linkField(true)}
-        {errorText}
-        <button type="submit" className="login__primary" aria-busy={busy || undefined}>
-          {busy ? 'Signing in…' : 'Sign in with link'}
-        </button>
-        <button type="button" className="login__secondary" onClick={() => go('request')}>
-          Use a different email
-        </button>
-      </form>
-    );
-  } else if (view === 'paste') {
-    body = (
-      <form className="login__form" onSubmit={submitLink} noValidate>
-        <h2 className="login__heading">Paste your sign-in link</h2>
-        <p className="login__text">{copyHint}</p>
-        {emailField(!email)}
-        {linkField(Boolean(email))}
-        {errorText}
-        <button type="submit" className="login__primary" aria-busy={busy || undefined}>
-          {busy ? 'Signing in…' : 'Sign in with link'}
-        </button>
-        <button type="button" className="login__secondary" onClick={() => go('request')}>
-          Back
-        </button>
-      </form>
-    );
-  } else {
-    body = (
-      <form className="login__form" onSubmit={submitEmail} noValidate>
-        <h2 className="login__heading">Sign in to sync your tasks</h2>
-        <p className="login__text">We will email you a link. No password needed.</p>
-        {emailField(true)}
-        {errorText}
-        <button type="submit" className="login__primary" aria-busy={busy || undefined}>
-          {busy ? 'Sending…' : 'Send sign-in link'}
-        </button>
-        <button type="button" className="login__secondary" onClick={() => go('paste')}>
-          I already have a link
-        </button>
-      </form>
-    );
-  }
+  const primaryLabel = busy
+    ? view === 'reset'
+      ? 'Sending…'
+      : 'Signing in…'
+    : { signIn: 'Sign in', signUp: 'Create account', reset: 'Send reset link', resetSent: '' }[
+        view
+      ];
 
   return (
     <main className="login">
@@ -221,7 +114,108 @@ export function LoginScreen({
           />
         </svg>
         <h1 className="login__title">TaskDone</h1>
-        {body}
+
+        {view === 'resetSent' ? (
+          <div className="login__form" role="status">
+            <h2 className="login__heading">{HEADINGS.resetSent}</h2>
+            <p className="login__text">
+              We sent a reset link to <strong>{email.trim()}</strong>. If it is not in your inbox,
+              look in spam. Choose a new password there, then come back and sign in.
+            </p>
+            <button type="button" className="login__secondary" onClick={() => go('signIn')}>
+              Back to sign in
+            </button>
+          </div>
+        ) : (
+          <form className="login__form" onSubmit={submit} noValidate>
+            <h2 className="login__heading">{HEADINGS[view]}</h2>
+            <p className="login__text">
+              {view === 'reset'
+                ? 'We will email you a link to choose a new password.'
+                : 'Your tasks sync across every device you sign in on.'}
+            </p>
+
+            <label htmlFor={emailId} className="login__label">
+              Email
+            </label>
+            <input
+              id={emailId}
+              className="login__input"
+              type="email"
+              name="email"
+              autoComplete={view === 'signUp' ? 'email' : 'username'}
+              inputMode="email"
+              autoCapitalize="none"
+              spellCheck={false}
+              placeholder="name@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              {...describe('email')}
+            />
+            {errorFor('email')}
+
+            {view !== 'reset' && (
+              <>
+                <label htmlFor={passwordId} className="login__label">
+                  Password
+                </label>
+                <div className="login__password">
+                  <input
+                    id={passwordId}
+                    className="login__input"
+                    type={showPassword ? 'text' : 'password'}
+                    name="password"
+                    autoComplete={view === 'signUp' ? 'new-password' : 'current-password'}
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    minLength={view === 'signUp' ? PASSWORD_MIN : undefined}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    {...describe('password', view === 'signUp' ? hintId : undefined)}
+                  />
+                  <button
+                    type="button"
+                    className="login__reveal"
+                    aria-pressed={showPassword}
+                    onClick={() => setShowPassword((v) => !v)}
+                  >
+                    {showPassword ? 'Hide' : 'Show'}
+                    <span className="visually-hidden"> password</span>
+                  </button>
+                </div>
+                {view === 'signUp' && (
+                  <p id={hintId} className="login__hint">
+                    Use at least {PASSWORD_MIN} characters.
+                  </p>
+                )}
+                {errorFor('password')}
+              </>
+            )}
+
+            {errorFor('form')}
+            <button type="submit" className="login__primary" aria-busy={busy || undefined}>
+              {primaryLabel}
+            </button>
+
+            <div className="login__links">
+              {view === 'signIn' && (
+                <>
+                  <button type="button" className="login__link" onClick={() => go('reset')}>
+                    Forgot password?
+                  </button>
+                  <button type="button" className="login__link" onClick={() => go('signUp')}>
+                    Create an account
+                  </button>
+                </>
+              )}
+              {view !== 'signIn' && (
+                <button type="button" className="login__link" onClick={() => go('signIn')}>
+                  {view === 'signUp' ? 'I already have an account' : 'Back to sign in'}
+                </button>
+              )}
+            </div>
+          </form>
+        )}
       </div>
     </main>
   );

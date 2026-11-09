@@ -20,7 +20,7 @@ Dashboard diário para visualizar tarefas a fazer, concluí-las rapidamente e ac
 - Gráfico de andamento do dia (anel ou barra de progresso: concluídas / total)
 - Gamificação: **streak diário, XP e níveis, conquistas (badges)**
 - Sincronização entre dispositivos (Firebase) com funcionamento offline
-- Login por link de e-mail (sem senha), mínimo necessário para sincronizar
+- Login por e-mail e senha, mínimo necessário para sincronizar (decidido em 2026-11-09: o link de e-mail abria no Safari e não logava o app instalado no iPhone)
 
 ### Depois (fora da v1, NÃO implementar agora)
 
@@ -104,7 +104,7 @@ Além disso:
 
 - Código em repositório Git.
 - Frontend: React + Vite + TypeScript, PWA.
-- Dados e login: Firebase (Firestore + Authentication por link de e-mail).
+- Dados e login: Firebase (Firestore + Authentication por e-mail e senha).
 - Hospedagem: a definir com o dono (Firebase Hosting, Vercel ou Cloudflare Pages).
 
 ## Decisões abertas (use o default e avise)

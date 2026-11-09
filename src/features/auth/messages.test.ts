@@ -1,13 +1,22 @@
-import { EMAIL_PATTERN, signInErrorMessage } from './messages';
+import { EMAIL_PATTERN, authErrorMessage } from './messages';
 
-describe('signInErrorMessage', () => {
-  it('says how to recover for known codes', () => {
-    expect(signInErrorMessage({ code: 'auth/expired-action-code' })).toMatch(/Request a new one/);
-    expect(signInErrorMessage({ code: 'auth/network-request-failed' })).toMatch(/connection/);
+describe('authErrorMessage', () => {
+  it('ties wrong credentials to the password field with a way out', () => {
+    expect(authErrorMessage({ code: 'auth/invalid-credential' })).toEqual({
+      field: 'password',
+      text: expect.stringMatching(/reset your password/),
+    });
   });
 
-  it('falls back to a recoverable message', () => {
-    expect(signInErrorMessage(new Error('boom'))).toMatch(/try again/);
+  it('points an existing account to sign in', () => {
+    expect(authErrorMessage({ code: 'auth/email-already-in-use' }).text).toMatch(/Sign in/);
+  });
+
+  it('falls back to a recoverable form message', () => {
+    expect(authErrorMessage(new Error('boom'))).toEqual({
+      field: 'form',
+      text: expect.stringMatching(/try again/),
+    });
   });
 });
 

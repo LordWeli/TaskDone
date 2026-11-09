@@ -14,7 +14,7 @@ Personal daily-task web app. Read `SPEC.md` first: it is the source of truth for
 
 - React 18+ with Vite and TypeScript (strict mode on)
 - PWA via `vite-plugin-pwa` (installable, offline shell, precached assets)
-- Firebase: Firestore (with persistent local cache for offline) + Authentication (email link sign-in)
+- Firebase: Firestore (with persistent local cache for offline) + Authentication (email + password sign-in)
 - Tests: Vitest + React Testing Library; one Playwright smoke test for the 3 acceptance flows
 - Lint/format: ESLint + Prettier. Package manager: npm.
 - Prefer few dependencies. Animation: CSS first; add a small library (e.g. `motion`) only if CSS cannot do it. Charting: a tiny SVG ring/bar built by hand is preferred over a charting library.
@@ -28,7 +28,7 @@ src/
     tasks/        task model, hooks, add/complete/delete, list UI
     progress/     daily progress ring/bar and calculations
     gamification/ xp, levels, streak, badges (pure logic + UI)
-    auth/         email-link sign-in
+    auth/         email + password sign-in
   lib/
     firebase.ts   init + Firestore with persistent cache
     date.ts       local-day helpers (single place for "what day is it")
@@ -53,7 +53,7 @@ src/
 - Write `firestore.rules`: a user can read/write only `users/{uid}/**` where `request.auth.uid == uid`. Everything else denied.
 - Validate fields (title is a string, 1–200 chars; numeric fields are numbers) in the rules.
 - Never commit secrets. The Firebase web config is not secret, but keep it in `.env` files with an `.env.example` committed. Do not commit `.env`.
-- Add an `.env.example` and document the Firebase setup steps in `README.md` (create project, enable Firestore, enable email-link auth, authorized domains, deploy rules).
+- Add an `.env.example` and document the Firebase setup steps in `README.md` (create project, enable Firestore, enable email/password auth, authorized domains, deploy rules).
 
 ## Design direction
 
@@ -90,7 +90,7 @@ Before declaring any milestone done, run the review skills and **apply the fixes
 2. **Local core (no Firebase yet):** add/complete/delete + undo, daily progress ring, list UI, with tasks behind a repository interface (in-memory/local implementation)
 3. **Gamification:** pure logic + tests, then UI (XP bar, level, streak, badges, celebrations)
 4. **Design pass:** present palette/font options, apply the chosen one, animations
-5. **Firebase:** Firestore with persistent cache, email-link auth, security rules, swap the repository implementation, offline/sync test
+5. **Firebase:** Firestore with persistent cache, email/password auth, security rules, swap the repository implementation, offline/sync test
 6. **PWA + hardening:** installability (manifest, icons, offline), Lighthouse PWA/performance/accessibility pass, Playwright smoke test
 7. **Review:** run the review skills, fix, update README, deploy instructions
 

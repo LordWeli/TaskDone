@@ -2,85 +2,76 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LoginScreen } from './LoginScreen';
 
-function setup(mode: 'request' | 'confirm' = 'request') {
-  const onRequest = vi.fn(() => Promise.resolve());
-  const onConfirm = vi.fn(() => Promise.resolve());
-  const onPasteLink = vi.fn<(email: string, link: string) => Promise<void>>(() =>
-    Promise.resolve(),
-  );
-  render(
-    <LoginScreen
-      mode={mode}
-      onRequest={onRequest}
-      onConfirm={onConfirm}
-      onPasteLink={onPasteLink}
-    />,
-  );
-  return {
-    user: userEvent.setup(),
-    onRequest,
-    onConfirm,
-    onPasteLink,
-    input: screen.getByLabelText('Email'),
-  };
+type Credentials = (email: string, password: string) => Promise<void>;
+
+function setup() {
+  const onSignIn = vi.fn<Credentials>(() => Promise.resolve());
+  const onSignUp = vi.fn<Credentials>(() => Promise.resolve());
+  const onResetPassword = vi.fn<(email: string) => Promise<void>>(() => Promise.resolve());
+  render(<LoginScreen onSignIn={onSignIn} onSignUp={onSignUp} onResetPassword={onResetPassword} />);
+  return { user: userEvent.setup(), onSignIn, onSignUp, onResetPassword };
 }
 
+const email = () => screen.getByLabelText('Email');
+const password = () => screen.getByLabelText('Password');
+
 describe('LoginScreen', () => {
-  it('sends a link and says where it went', async () => {
-    const { user, input, onRequest } = setup();
-    await user.type(input, 'me@example.com{Enter}');
-    expect(onRequest).toHaveBeenCalledWith('me@example.com');
+  it('signs in with email and password, using Enter', async () => {
+    const { user, onSignIn } = setup();
+    await user.type(email(), 'me@example.com');
+    await user.type(password(), 'secret123{Enter}');
+    expect(onSignIn).toHaveBeenCalledWith('me@example.com', 'secret123');
+  });
+
+  it('lets password managers fill the fields', () => {
+    setup();
+    expect(email()).toHaveAttribute('autocomplete', 'username');
+    expect(password()).toHaveAttribute('autocomplete', 'current-password');
+  });
+
+  it('puts a wrong-password error on the password field', async () => {
+    const { user, onSignIn } = setup();
+    onSignIn.mockRejectedValueOnce({ code: 'auth/invalid-credential' });
+    await user.type(email(), 'me@example.com');
+    await user.type(password(), 'nope{Enter}');
+    expect(password()).toHaveAttribute('aria-invalid', 'true');
+    expect(password()).toHaveAccessibleDescription(/incorrect.*reset your password/);
+  });
+
+  it('validates the email before calling the server', async () => {
+    const { user, onSignIn } = setup();
+    await user.type(email(), 'me@');
+    await user.type(password(), 'secret123{Enter}');
+    expect(onSignIn).not.toHaveBeenCalled();
+    expect(email()).toHaveAccessibleDescription('Enter an email like name@example.com.');
+  });
+
+  it('creates an account with a new password of the minimum length', async () => {
+    const { user, onSignUp } = setup();
+    await user.click(screen.getByRole('button', { name: 'Create an account' }));
+    expect(password()).toHaveAttribute('autocomplete', 'new-password');
+    expect(password()).toHaveAccessibleDescription('Use at least 8 characters.');
+    await user.type(email(), 'me@example.com');
+    await user.type(password(), 'short{Enter}');
+    expect(onSignUp).not.toHaveBeenCalled();
+    await user.clear(password());
+    await user.type(password(), 'long enough{Enter}');
+    expect(onSignUp).toHaveBeenCalledWith('me@example.com', 'long enough');
+  });
+
+  it('shows and hides the password', async () => {
+    const { user } = setup();
+    const toggle = screen.getByRole('button', { name: 'Show password' });
+    await user.click(toggle);
+    expect(password()).toHaveAttribute('type', 'text');
+    expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('sends a reset link and says where it went', async () => {
+    const { user, onResetPassword } = setup();
+    await user.click(screen.getByRole('button', { name: 'Forgot password?' }));
+    await user.type(email(), 'me@example.com{Enter}');
+    expect(onResetPassword).toHaveBeenCalledWith('me@example.com');
     expect(screen.getByRole('heading', { name: 'Check your email' })).toBeInTheDocument();
-    expect(screen.getByText('me@example.com')).toBeInTheDocument();
-  });
-
-  it('signs in with a link pasted after requesting it (iPhone Home Screen app)', async () => {
-    const { user, input, onPasteLink } = setup();
-    await user.type(input, 'me@example.com{Enter}');
-    const link = screen.getByLabelText('Sign-in link');
-    expect(link).toHaveFocus();
-    await user.type(link, 'https://example.com/link{Enter}');
-    expect(onPasteLink).toHaveBeenCalledWith('me@example.com', 'https://example.com/link');
-  });
-
-  it('explains a pasted text that is not a sign-in link', async () => {
-    const { user, input, onPasteLink } = setup();
-    onPasteLink.mockRejectedValueOnce({ code: 'taskdone/not-a-link' });
-    await user.type(input, 'me@example.com{Enter}');
-    const link = screen.getByLabelText('Sign-in link');
-    await user.type(link, 'hello{Enter}');
-    expect(link).toHaveAttribute('aria-invalid', 'true');
-    expect(link).toHaveAccessibleDescription(/not a sign-in link/);
-  });
-
-  it('accepts a link from an earlier request', async () => {
-    const { user, onPasteLink } = setup();
-    await user.click(screen.getByRole('button', { name: 'I already have a link' }));
-    await user.type(screen.getByLabelText('Email'), 'me@example.com');
-    await user.type(screen.getByLabelText('Sign-in link'), 'https://example.com/link{Enter}');
-    expect(onPasteLink).toHaveBeenCalledWith('me@example.com', 'https://example.com/link');
-  });
-
-  it('explains an invalid email next to the field', async () => {
-    const { user, input, onRequest } = setup();
-    await user.type(input, 'me@{Enter}');
-    expect(onRequest).not.toHaveBeenCalled();
-    expect(input).toHaveAttribute('aria-invalid', 'true');
-    expect(input).toHaveAccessibleDescription('Enter an email like name@example.com.');
-  });
-
-  it('shows a recoverable error when sending fails', async () => {
-    const { user, input, onRequest } = setup();
-    onRequest.mockRejectedValueOnce({ code: 'auth/network-request-failed' });
-    await user.type(input, 'me@example.com{Enter}');
-    expect(screen.getByText(/Check your connection and try again/)).toBeInTheDocument();
-  });
-
-  it('confirms the email for a link opened on another device', async () => {
-    const { user, input, onConfirm } = setup('confirm');
-    expect(screen.getByRole('heading', { name: 'Confirm your email' })).toBeInTheDocument();
-    await user.type(input, 'me@example.com');
-    await user.click(screen.getByRole('button', { name: 'Sign in' }));
-    expect(onConfirm).toHaveBeenCalledWith('me@example.com');
   });
 });

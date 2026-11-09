@@ -35,7 +35,7 @@ function SyncedDashboard({ uid, account }: { uid: string; account: Account }) {
 
 function FirebaseApp() {
   const { auth } = getFirebase();
-  const { state, requestLink, confirmEmail, pasteLink, savedEmail, logOut } = useAuth(auth);
+  const { state, signIn, signUp, resetPassword, logOut } = useAuth(auth);
 
   switch (state.status) {
     case 'loading':
@@ -45,16 +45,7 @@ function FirebaseApp() {
         </main>
       );
     case 'signedOut':
-    case 'needsEmail':
-      return (
-        <LoginScreen
-          mode={state.status === 'needsEmail' ? 'confirm' : 'request'}
-          onRequest={requestLink}
-          onConfirm={confirmEmail}
-          onPasteLink={pasteLink}
-          rememberedEmail={savedEmail()}
-        />
-      );
+      return <LoginScreen onSignIn={signIn} onSignUp={signUp} onResetPassword={resetPassword} />;
     case 'signedIn':
       return (
         <SyncedDashboard
