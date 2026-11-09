@@ -7,6 +7,8 @@
 }
 
 html {
+  /* Keep focused rows clear of the sticky add bar and the snackbar (WCAG 2.4.11). */
+  scroll-padding-block: 6.5rem 6rem;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }

@@ -1,0 +1,60 @@
+.add-task {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-raised);
+  border: 2px solid transparent;
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+.add-task:focus-within {
+  border-color: var(--color-accent);
+}
+
+.add-task__input {
+  min-width: 0;
+  min-height: 56px;
+  padding-inline: var(--space-3);
+  border: 0;
+  background: transparent;
+  font-size: var(--text-lg);
+  outline: none;
+}
+
+.add-task__input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.add-task__button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 56px;
+  min-width: 56px;
+  padding-inline: var(--space-4);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
+  font-weight: var(--weight-semibold);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.add-task__button:hover {
+  background: var(--color-accent-strong);
+}
+
+.add-task__button:active {
+  transform: scale(0.97);
+}
+
+.add-task__hint {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-inline: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}

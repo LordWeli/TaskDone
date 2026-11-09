@@ -1,0 +1,45 @@
+.progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+
+.progress__ring {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+
+.progress__track {
+  fill: none;
+  stroke: var(--color-surface-muted);
+}
+
+.progress__value {
+  fill: none;
+  stroke: var(--color-success);
+  stroke-linecap: round;
+}
+
+.progress__fraction {
+  position: absolute;
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-sm);
+}
+
+.progress__title {
+  margin: 0;
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-lg);
+}
+
+.progress__caption {
+  margin: 0;
+  color: var(--color-text-muted);
+}
