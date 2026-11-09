@@ -68,3 +68,9 @@ p {
   white-space: nowrap;
   border: 0;
 }
+
+/* Blank paper while the app boots; matches the manifest background so there is no flash. */
+.app-loading {
+  min-height: 100dvh;
+  background: var(--color-bg);
+}

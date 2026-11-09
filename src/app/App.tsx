@@ -1,26 +1,10 @@
-import { useMemo, useState } from 'react';
-import { LoginScreen } from '../features/auth/LoginScreen';
-import { useAuth } from '../features/auth/useAuth';
-import { createFirestoreStore } from '../features/tasks/firestoreStore';
+import { lazy, Suspense, useState } from 'react';
 import { createLocalStore } from '../features/tasks/localStore';
-import { StoreProvider } from '../features/tasks/StoreProvider';
 import type { TaskStore } from '../features/tasks/store';
-import { getFirebase, isFirebaseConfigured } from '../lib/firebase';
-import { Dashboard, type Account } from './Dashboard';
-import { AnnouncerProvider } from './feedback/Announcer';
-import { ToastProvider } from './feedback/Toaster';
+import { isFirebaseConfigured } from '../lib/firebaseConfig';
+import { Shell } from './Shell';
 
-function Shell({ store, account }: { store: TaskStore; account?: Account }) {
-  return (
-    <StoreProvider store={store}>
-      <AnnouncerProvider>
-        <ToastProvider>
-          <Dashboard {...(account ? { account } : {})} />
-        </ToastProvider>
-      </AnnouncerProvider>
-    </StoreProvider>
-  );
-}
+const FirebaseApp = lazy(() => import('./FirebaseApp'));
 
 /** Without Firebase config (or with an injected store, as in tests) the app runs on local storage. */
 function LocalApp({ store }: { store?: TaskStore | undefined }) {
@@ -28,36 +12,11 @@ function LocalApp({ store }: { store?: TaskStore | undefined }) {
   return <Shell store={activeStore} />;
 }
 
-function SyncedDashboard({ uid, account }: { uid: string; account: Account }) {
-  const store = useMemo(() => createFirestoreStore(getFirebase().db, uid), [uid]);
-  return <Shell store={store} account={account} />;
-}
-
-function FirebaseApp() {
-  const { auth } = getFirebase();
-  const { state, signIn, signUp, resetPassword, logOut } = useAuth(auth);
-
-  switch (state.status) {
-    case 'loading':
-      return (
-        <main className="visually-hidden" aria-busy="true">
-          Loading
-        </main>
-      );
-    case 'signedOut':
-      return <LoginScreen onSignIn={signIn} onSignUp={signUp} onResetPassword={resetPassword} />;
-    case 'signedIn':
-      return (
-        <SyncedDashboard
-          key={state.user.uid}
-          uid={state.user.uid}
-          account={{ email: state.user.email ?? '', onSignOut: () => void logOut() }}
-        />
-      );
-  }
-}
-
 export function App({ store }: { store?: TaskStore }) {
   if (store || !isFirebaseConfigured) return <LocalApp store={store} />;
-  return <FirebaseApp />;
+  return (
+    <Suspense fallback={<main className="app-loading" aria-busy="true" />}>
+      <FirebaseApp />
+    </Suspense>
+  );
 }

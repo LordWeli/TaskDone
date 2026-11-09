@@ -176,7 +176,6 @@ export function LoginScreen({ onSignIn, onSignUp, onResetPassword }: Props) {
                   <button
                     type="button"
                     className="login__reveal"
-                    aria-pressed={showPassword}
                     onClick={() => setShowPassword((v) => !v)}
                   >
                     {showPassword ? 'Hide' : 'Show'}

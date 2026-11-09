@@ -61,10 +61,10 @@ describe('LoginScreen', () => {
 
   it('shows and hides the password', async () => {
     const { user } = setup();
-    const toggle = screen.getByRole('button', { name: 'Show password' });
-    await user.click(toggle);
+    await user.click(screen.getByRole('button', { name: 'Show password' }));
     expect(password()).toHaveAttribute('type', 'text');
-    expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await user.click(screen.getByRole('button', { name: 'Hide password' }));
+    expect(password()).toHaveAttribute('type', 'password');
   });
 
   it('sends a reset link and says where it went', async () => {
