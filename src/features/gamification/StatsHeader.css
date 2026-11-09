@@ -12,8 +12,11 @@
 
 .stats__level-badge {
   flex: none;
-  display: grid;
-  place-content: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25em;
+  white-space: nowrap;
   min-width: 3.25rem;
   height: 2rem;
   padding-inline: var(--space-2);
@@ -62,7 +65,7 @@
 .stats__xp-pop {
   position: absolute;
   inset-inline-end: 0;
-  top: -1.25rem;
+  top: 100%;
   font-size: var(--text-sm);
   font-weight: var(--weight-bold);
   color: var(--color-xp);
@@ -121,14 +124,14 @@
 @keyframes xp-pop {
   0% {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(4px);
   }
   20% {
     opacity: 1;
   }
   100% {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(-12px);
   }
 }
 

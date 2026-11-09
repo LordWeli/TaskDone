@@ -35,7 +35,7 @@ export function AddTaskForm({ onAdd, inputRef }: Props) {
         type="text"
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder="Add a task, like Call the dentist"
+        placeholder="Add a task"
         maxLength={TASK_TITLE_MAX}
         autoComplete="off"
         enterKeyHint="done"

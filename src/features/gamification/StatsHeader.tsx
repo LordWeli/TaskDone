@@ -24,7 +24,7 @@ export function StatsHeader({ view, xpPop }: Props) {
       <div className="stats__level">
         <span key={view.level} className="stats__level-badge">
           <span className="visually-hidden">Level </span>
-          <span aria-hidden="true">Lv </span>
+          <span aria-hidden="true">Lv</span>
           {view.level}
         </span>
         <div className="stats__xp">
