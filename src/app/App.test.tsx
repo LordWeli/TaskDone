@@ -52,7 +52,10 @@ describe('acceptance flows', () => {
     const done = screen.getByRole('region', { name: /done/i });
     expect(within(done).getByRole('checkbox', { name: 'Buy milk' })).toBeChecked();
     expect(screen.getByText('All done. Nice work.')).toBeInTheDocument();
-    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuetext', '1 of 1 tasks done');
+    expect(screen.getByRole('progressbar', { name: "Today's progress" })).toHaveAttribute(
+      'aria-valuetext',
+      '1 of 1 tasks done',
+    );
     expect(store.getSnapshot().stats.totalXp).toBeGreaterThan(0);
   });
 
@@ -101,5 +104,48 @@ describe('acceptance flows', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('gamification feedback', () => {
+  it('shows XP, level and streak after completing a task', async () => {
+    const { user, input } = setup();
+    expect(screen.getByText('Start a streak today')).toBeInTheDocument();
+    await user.type(input, 'Buy milk{Enter}');
+    await user.click(screen.getByRole('checkbox', { name: 'Buy milk' }));
+
+    expect(screen.getByRole('progressbar', { name: 'Experience' })).toHaveAttribute(
+      'aria-valuetext',
+      '10 of 50 XP to level 2',
+    );
+    expect(screen.getByText('1-day streak')).toBeInTheDocument();
+    expect(screen.getByText('Badge unlocked: First Task')).toBeInTheDocument();
+  });
+
+  it('celebrates a perfect day and a level up', async () => {
+    const { user, input } = setup();
+    await user.type(input, 'A{Enter}B{Enter}C{Enter}');
+    for (const name of ['A', 'B', 'C']) {
+      await user.click(screen.getByRole('checkbox', { name }));
+    }
+    expect(screen.getByText(/Perfect day/)).toBeInTheDocument();
+    // 3 × 10 + 25 bonus = 55 XP → level 2
+    expect(screen.getByText('Level 2 reached')).toBeInTheDocument();
+  });
+
+  it('un-ticking takes the XP back', async () => {
+    const { user, input, store } = setup();
+    await user.type(input, 'A{Enter}');
+    await user.click(screen.getByRole('checkbox', { name: 'A' }));
+    await user.click(screen.getByRole('checkbox', { name: 'A' }));
+    expect(store.getSnapshot().stats.totalXp).toBe(0);
+    expect(screen.getByText('Start a streak today')).toBeInTheDocument();
+  });
+
+  it('lists badges in a dialog', async () => {
+    const { user } = setup();
+    await user.click(screen.getByRole('button', { name: 'Badges 0/7' }));
+    const dialog = screen.getByRole('dialog', { name: 'Badges' });
+    expect(within(dialog).getAllByText('Locked')).toHaveLength(7);
   });
 });

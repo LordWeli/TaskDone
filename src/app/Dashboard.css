@@ -12,14 +12,6 @@
   padding-block: var(--space-4) var(--space-2);
 }
 
-.dashboard__title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: var(--text-xl);
-  font-weight: var(--weight-bold);
-  line-height: var(--leading-tight);
-}
-
 .dashboard__main {
   display: grid;
   gap: var(--space-5);
